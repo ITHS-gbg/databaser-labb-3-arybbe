@@ -5,9 +5,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:QuizApp.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="clr-namespace:QuizApp.ViewModels"
+    xmlns:quizApp="clr-namespace:QuizApp"
+    d:DataContext="{d:DesignInstance Type=viewModels:QuestionViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
@@ -36,7 +40,10 @@
                     </Grid.ColumnDefinitions>
 
                     <Label Width="100">Name</Label>
-                    <TextBox Name="QuizName" Grid.Column="1" />
+                    <TextBox
+                        Name="QuizName"
+                        Grid.Column="1"
+                        Text="{Binding NewQuiz.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
 
                 <Grid Grid.Row="2">
@@ -46,7 +53,10 @@
                     </Grid.ColumnDefinitions>
 
                     <Label Width="100">Description</Label>
-                    <TextBox Name="QuizDescription" Grid.Column="1" />
+                    <TextBox
+                        Name="QuizDescription"
+                        Grid.Column="1"
+                        Text="{Binding NewQuiz.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
             </Grid>
 
@@ -58,7 +68,7 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
 
-                <Button Name="AddQuestionBtn">Add/Update Question</Button>
+                <Button Name="AddQuestionBtn" Click="AddQuestionBtn_OnClick">Add/Update Question</Button>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -68,7 +78,10 @@
 
                     <Label Width="100">Question</Label>
 
-                    <TextBox Name="QuestionName" Grid.Column="1" />
+                    <TextBox
+                        Name="QuestionName"
+                        Grid.Column="1"
+                        Text="{Binding NewQuestion.Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 </Grid>
 
                 <Grid Grid.Row="2">
@@ -81,9 +94,18 @@
 
                     <Label Width="100">Options</Label>
 
-                    <TextBox Name="OptionOne" Grid.Column="1" />
-                    <TextBox Name="OptionTwo" Grid.Column="2" />
-                    <TextBox Name="OptionThree" Grid.Column="3" />
+                    <TextBox
+                        Name="OptionOne"
+                        Grid.Column="1"
+                        Text="{Binding NewQuestion.Options}" />
+                    <TextBox
+                        Name="OptionTwo"
+                        Grid.Column="2"
+                        Text="{Binding NewQuestion.Options}" />
+                    <TextBox
+                        Name="OptionThree"
+                        Grid.Column="3"
+                        Text="{Binding NewQuestion.Options}" />
 
                 </Grid>
 
@@ -95,24 +117,31 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
+                    <Grid.Resources>
+                        <quizApp:IntToBoolConverter x:Key="IntToBoolConverter" />
+                    </Grid.Resources>
+
                     <Label>Correct Option</Label>
 
                     <RadioButton
                         Name="CorrectIndexBtnOne"
                         Grid.Column="1"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}">
                         One
                     </RadioButton>
                     <RadioButton
                         Name="CorrectIndexBtnTwo"
                         Grid.Column="2"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}">
                         Two
                     </RadioButton>
                     <RadioButton
                         Name="CorrectIndexBtnThree"
                         Grid.Column="3"
-                        HorizontalAlignment="Center">
+                        HorizontalAlignment="Center"
+                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}">
                         Three
                     </RadioButton>
                 </Grid>
@@ -125,15 +154,12 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
-
-                <Button Margin="5">Add Question to Quiz</Button>
-                <Button Grid.Row="1" Margin="5">Remove Question from Quiz</Button>
-            </Grid>
+            <Button
+                Name="AddQuestionToQuizBtn"
+                Margin="5"
+                Click="AddQuestionToQuizBtn_OnClick">
+                Add Question to Quiz
+            </Button>
 
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
@@ -142,20 +168,25 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Label HorizontalAlignment="Center">Questions</Label>
+                <Label HorizontalAlignment="Center" FontWeight="Bold">Questions</Label>
 
-                <ListBox Name="QuestionBankList" Grid.Row="1">
+                <ListBox
+                    Name="QuestionList"
+                    Grid.Row="1"
+                    ItemsSource="{Binding Questions}"
+                    SelectedItem="{Binding SelectedQuestion}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="" />
+                            <TextBlock Text="{Binding Text}" />
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
                 <Button
+                    Name="RemoveQuestionBtn"
                     Grid.Row="2"
-                    Height="50"
-                    Margin="5">
+                    Height="45"
+                    Click="RemoveQuestionBtn_OnClick">
                     Remove Question
                 </Button>
             </Grid>

@@ -23,15 +23,21 @@ public class QuizRepository
             database.GetCollection<Quiz>("Quizzes", new MongoCollectionSettings() { AssignIdOnInsert = true });
     }
 
+    public event Action UpdateQuizList;
+    public event Action UpdateQuestionList;
+    public event Action UpdateQuestionListForQuiz;
+
     public void AddQuiz(QuizRecord quizRecord)
     {
         var newQuiz = new Quiz()
         {
             Name = quizRecord.Name,
             Description = quizRecord.Description,
+            Questions = new List<Question>()
         };
 
         _quizzesCollection.InsertOne(newQuiz);
+        UpdateQuizList.Invoke();
     }
 
     public void AddQuestion(QuestionRecord questionRecord)
@@ -44,6 +50,7 @@ public class QuizRepository
         };
 
         _questionsCollection.InsertOne(newQuestion);
+        UpdateQuestionList.Invoke();
     }
 
     public IEnumerable<QuizRecord> GetAllQuizzes()
@@ -66,17 +73,149 @@ public class QuizRepository
         return allQuestions;
     }
 
-    public void DeleteQuiz(string id)
+    public void AddQuestionToQuiz(string quizId, string questionId)
     {
-        var filter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(id));
+        var quizFilter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizId));
+        var quiz = _quizzesCollection.Find(quizFilter).FirstOrDefault();
 
-        _quizzesCollection.DeleteOne(filter);
+        var questionFilter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionId));
+        var question = _questionsCollection.Find(questionFilter).FirstOrDefault();
+
+        quiz.Questions.Add(question);
+
+        var update = Builders<Quiz>.Update.Set("Questions", quiz.Questions);
+        _quizzesCollection.UpdateOne(quizFilter, update);
+
+        UpdateQuestionListForQuiz.Invoke();
     }
 
-    public void DeleteQuestion(string id)
+    public void RemoveQuestionFromQuiz(string quizId, string questionId)
     {
-        var filter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(id));
+        var quizFilter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizId));
+        var quiz = _quizzesCollection.Find(quizFilter).FirstOrDefault();
+
+        var questionFilter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionId));
+        var question = _questionsCollection.Find(questionFilter).FirstOrDefault();
+
+        quiz.Questions.Remove(question);
+
+        var update = Builders<Quiz>.Update.Set("Questions", quiz.Questions);
+        _quizzesCollection.UpdateOne(quizFilter, update);
+        UpdateQuestionListForQuiz.Invoke();
+    }
+
+    public void DeleteQuiz(string quizId)
+    {
+        var filter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizId));
+
+        _quizzesCollection.DeleteOne(filter);
+        UpdateQuizList.Invoke();
+    }
+
+    public void DeleteQuestion(string questionId)
+    {
+        var filter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionId));
 
         _questionsCollection.DeleteOne(filter);
+        UpdateQuestionList.Invoke();
+    }
+
+    public void DeleteQuestionFromQuizzes(string questionId)
+    {
+        var filter = Builders<Quiz>.Filter.ElemMatch(q => q.Questions, q => q.Id == ObjectId.Parse(questionId));
+        var update = Builders<Quiz>.Update.PullFilter(q => q.Questions, q => q.Id == ObjectId.Parse(questionId));
+        _quizzesCollection.UpdateMany(filter, update);
+        UpdateQuestionListForQuiz.Invoke();
+    }
+
+
+    public void UpdateQuiz(QuizRecord quizRecord)
+    {
+        var filter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizRecord.Id));
+        var update = Builders<Quiz>.Update.Set("Name", quizRecord.Name).Set("Description", quizRecord.Description);
+
+        _quizzesCollection.UpdateOne(filter, update);
+        UpdateQuizList.Invoke();
+    }
+
+    public void UpdateQuestion(QuestionRecord questionRecord)
+    {
+        var filter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionRecord.Id));
+        var update = Builders<Question>.Update.Set("Text", questionRecord.Text).Set("Options", questionRecord.Options)
+            .Set("CorrectOptionIndex", int.Parse(questionRecord.CorrectOptionIndex));
+
+        _questionsCollection.UpdateOne(filter, update);
+        UpdateQuestionList.Invoke();
+    }
+
+    public IEnumerable<QuestionRecord> GetQuestionsForQuiz(string quizId)
+    {
+        var filter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizId));
+        var quiz = _quizzesCollection.Find(filter).FirstOrDefault();
+
+        return quiz.Questions.Select(q =>
+                       new QuestionRecord(q.Id.ToString(), q.Text, q.Options, q.CorrectOptionIndex.ToString()));
+    }
+
+    public QuizRecord GetQuizById(string quizId)
+    {
+        var filter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizId));
+        var quiz = _quizzesCollection.Find(filter).FirstOrDefault();
+
+        return new QuizRecord(quiz.Id.ToString(), quiz.Name, quiz.Description, new List<QuestionRecord>());
+    }
+
+    public QuestionRecord GetQuestionById(string questionId)
+    {
+        var filter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionId));
+        var question = _questionsCollection.Find(filter).FirstOrDefault();
+
+        return new QuestionRecord(question.Id.ToString(), question.Text, question.Options, question.CorrectOptionIndex.ToString());
+    }
+
+    public QuizRecord GetQuizByName(string name)
+    {
+        var filter = Builders<Quiz>.Filter.Eq("Name", name);
+        var quiz = _quizzesCollection.Find(filter).FirstOrDefault();
+
+        return new QuizRecord(quiz.Id.ToString(), quiz.Name, quiz.Description, new List<QuestionRecord>());
+    }
+
+    public QuestionRecord GetQuestionByText(string text)
+    {
+        var filter = Builders<Question>.Filter.Eq("Text", text);
+        var question = _questionsCollection.Find(filter).FirstOrDefault();
+
+        return new QuestionRecord(question.Id.ToString(), question.Text, question.Options, question.CorrectOptionIndex.ToString());
+    }
+
+    public IEnumerable<QuizRecord> GetQuizzesForQuestion(string questionId)
+    {
+        var filter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionId));
+        var question = _questionsCollection.Find(filter).FirstOrDefault();
+
+        if (question is null)
+        {
+            return Enumerable.Empty<QuizRecord>();
+        }
+
+        var quizFilter = Builders<Quiz>.Filter.Empty;
+        var allQuizzes = _quizzesCollection.Find(quizFilter).ToList();
+
+        var quizzesWithQuestion = allQuizzes
+            .Where(quiz => quiz.Questions.Any(q => q.Id == question.Id))
+            .Select(quiz => new QuizRecord(
+                quiz.Id.ToString(),
+                quiz.Name,
+                quiz.Description,
+                quiz.Questions.Select(q => new QuestionRecord(
+                    q.Id.ToString(),
+                    q.Text,
+                    q.Options,
+                    q.CorrectOptionIndex.ToString()
+                )).ToList() 
+            ));
+
+        return quizzesWithQuestion;
     }
 }

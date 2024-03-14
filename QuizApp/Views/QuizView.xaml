@@ -5,13 +5,17 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:QuizApp.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewmodels="clr-namespace:QuizApp.ViewModels"
+    d:DataContext="{d:DesignInstance Type=viewmodels:QuizViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
     <Grid>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Grid>
@@ -22,23 +26,39 @@
 
             <ComboBox
                 Name="QuizSelector"
-                Margin="10"
+                Margin="5"
                 DisplayMemberPath="Name"
-                ItemsSource="{Binding}" />
+                ItemsSource="{Binding Quizzes}"
+                SelectedItem="{Binding SelectedQuiz, Mode=TwoWay}" />
 
-            <Button Name="RemoveQuizBtn" Grid.Column="1">Remove Quiz</Button>
+            <Button
+                Name="RemoveQuizBtn"
+                Grid.Column="1"
+                Click="RemoveQuizBtn_OnClick">
+                Remove Quiz
+            </Button>
         </Grid>
 
         <ListBox
             Name="QuizQuestions"
             Grid.Row="1"
-            ItemsSource="{Binding}">
+            ItemsSource="{Binding CurrentQuizQuestions}"
+            SelectedItem="{Binding SelectedQuestion, Mode=TwoWay}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding}" />
+                    <TextBlock Text="{Binding Text}" />
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <Button
+            Name="RemoveQuestionFromQuizBtn"
+            Grid.Row="2"
+            Height="40"
+            Margin="5"
+            Click="RemoveQuestionFromQuizBtn_OnClick">
+            Remove Question from Quiz
+        </Button>
     </Grid>
 </UserControl>
 
