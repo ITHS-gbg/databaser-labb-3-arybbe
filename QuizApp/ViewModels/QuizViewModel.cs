@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using Common.DTOs;
 using DataAccess.Services;
+using QuizApp.Views;
 
 namespace QuizApp.ViewModels;
 
@@ -70,7 +71,36 @@ public class QuizViewModel : BaseViewModel
 
     private void LoadQuestionsForQuiz()
     {
+        if (SelectedQuiz is null)
+        {
+            return;
+        }
         var questions = _quizRepository.GetQuestionsForQuiz(SelectedQuiz.Id);
+        if (questions is null)
+        {
+            return;
+        }
+
         CurrentQuizQuestions = new ObservableCollection<QuestionRecord>(questions);
+    }
+
+    public void ReloadQuizzes()
+    {
+        Quizzes.Clear();
+        var quizzes = _quizRepository.GetAllQuizzes();
+        foreach (var quiz in quizzes)
+        {
+            Quizzes.Add(quiz);
+        }
+    }
+
+    public void ReloadQuestionsForQuiz()
+    {
+        CurrentQuizQuestions.Clear();
+        var questions = _quizRepository.GetQuestionsForQuiz(SelectedQuiz.Id);
+        foreach (var question in questions)
+        {
+            CurrentQuizQuestions.Add(question);
+        }
     }
 }

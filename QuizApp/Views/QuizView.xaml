@@ -5,8 +5,9 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:QuizApp.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:viewmodels="clr-namespace:QuizApp.ViewModels"
-    d:DataContext="{d:DesignInstance Type=viewmodels:QuizViewModel}"
+    xmlns:quizApp="clr-namespace:QuizApp"
+    xmlns:viewModels="clr-namespace:QuizApp.ViewModels"
+    d:DataContext="{d:DesignInstance Type=viewModels:QuizViewModel}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
@@ -28,8 +29,8 @@
                 Name="QuizSelector"
                 Margin="5"
                 DisplayMemberPath="Name"
-                ItemsSource="{Binding Quizzes}"
-                SelectedItem="{Binding SelectedQuiz, Mode=TwoWay}" />
+                ItemsSource="{Binding Quizzes, UpdateSourceTrigger=PropertyChanged}"
+                SelectedItem="{Binding SelectedQuiz, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
             <Button
                 Name="RemoveQuizBtn"

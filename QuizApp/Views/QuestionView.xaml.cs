@@ -27,6 +27,7 @@ namespace QuizApp.Views
         private readonly QuestionViewModel _questionViewModel;
         private readonly QuizViewModel _quizViewModel;
 
+
         public QuestionView()
         {
             InitializeComponent();
@@ -34,10 +35,6 @@ namespace QuizApp.Views
             _questionViewModel = new QuestionViewModel();
             _quizViewModel = new QuizViewModel();
             DataContext = _questionViewModel;
-
-            _quizRepository.UpdateQuestionList += ReloadQuestions;
-            _quizRepository.UpdateQuizList += ReloadQuizzes;
-            _quizRepository.UpdateQuestionListForQuiz += ReloadQuestionsForQuiz;
         }
 
         private void ReloadQuestionsForQuiz()
@@ -84,23 +81,44 @@ namespace QuizApp.Views
                 return;
             }
             _quizRepository.AddQuiz(_questionViewModel.NewQuiz);
-            _questionViewModel.NewQuiz = null;
-            ReloadQuizzes();
+            _quizViewModel.ReloadQuizzes();
+            _questionViewModel.NewQuiz = new QuizRecord("", "", "", []);
         }
 
         private void RemoveQuestionBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            _quizRepository.DeleteQuestion(_questionViewModel.SelectedQuestion.Id);
+            _questionViewModel.ReloadQuestions();
         }
 
         private void AddQuestionToQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            _quizRepository.AddQuestionToQuiz(_quizViewModel.SelectedQuiz.Id, _questionViewModel.SelectedQuestion.Id);
+            ReloadQuestionsForQuiz();
         }
 
         private void AddQuestionBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            if (_questionViewModel.NewQuestion is null)
+            {
+                MessageBox.Show("Please enter a question");
+                return;
+            }
+
+            if (_quizRepository.GetQuestionByText(_questionViewModel.NewQuestion.Text) is not null)
+            {
+                MessageBox.Show("Question with that Text already exists");
+                return;
+            }
+
+            var updatedQuestion = _questionViewModel.NewQuestion with
+            {
+                CorrectOptionIndex = _questionViewModel.CorrectOptionIndex.ToString()
+            };
+            _quizRepository.AddQuestion(updatedQuestion);
+
+            _questionViewModel.ReloadQuestions();
+            _questionViewModel.NewQuestion = new QuestionRecord("", "", [], "");
         }
     }
 }

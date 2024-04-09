@@ -20,14 +20,14 @@ public class IntToBoolConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is bool boolValue && boolValue && parameter is string paramString)
+        if (value is bool boolValue && boolValue)
         {
-            int paramValue;
-            if (int.TryParse(paramString, out paramValue))
+            if (int.TryParse(parameter as string, out int index))
             {
-                return paramValue;
+                return index;
             }
         }
         return Binding.DoNothing;
     }
+
 }

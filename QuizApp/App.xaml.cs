@@ -2,6 +2,7 @@
 using System.Data;
 using System.Windows;
 using DataAccess.Entities;
+using QuizApp.ViewModels;
 
 namespace QuizApp
 {

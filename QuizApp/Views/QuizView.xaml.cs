@@ -25,48 +25,35 @@ namespace QuizApp.Views
     {
         private readonly QuizRepository _quizRepository;
         private readonly QuizViewModel _quizViewModel;
+        private readonly QuestionViewModel _questionViewModel;
 
         public QuizView()
         {
             InitializeComponent();
             _quizRepository = new QuizRepository();
             _quizViewModel = new QuizViewModel();
+            _questionViewModel = new QuestionViewModel();
             DataContext = _quizViewModel;
-
-            _quizRepository.UpdateQuizList += ReloadQuizzes;
-            _quizRepository.UpdateQuestionListForQuiz += ReloadQuestionsForQuiz;
         }
 
-        private void ReloadQuestionsForQuiz()
-        {
-            _quizViewModel.CurrentQuizQuestions.Clear();
-            var questions = _quizRepository.GetQuestionsForQuiz(_quizViewModel.SelectedQuiz.Id);
-            foreach (var question in questions)
-            {
-                _quizViewModel.CurrentQuizQuestions.Add(question);
-            }
-        }
+        
 
-        private void ReloadQuizzes()
-        {
-            _quizViewModel.Quizzes.Clear();
-            var quizzes = _quizRepository.GetAllQuizzes();
-            foreach (var quiz in quizzes)
-            {
-                _quizViewModel.Quizzes.Add(quiz);
-            }
-        }
 
         private void RemoveQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
+            if (_quizViewModel.SelectedQuiz is null)
+            {
+                return;
+            }
             _quizRepository.DeleteQuiz(_quizViewModel.SelectedQuiz.Id);
-            ReloadQuizzes();
+            _quizViewModel.SelectedQuiz = null;
+            _quizViewModel.ReloadQuizzes();
         }
 
         private void RemoveQuestionFromQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
             _quizRepository.RemoveQuestionFromQuiz(_quizViewModel.SelectedQuiz.Id, _quizViewModel.SelectedQuestion.Id);
-            ReloadQuestionsForQuiz();
+            _quizViewModel.ReloadQuestionsForQuiz();
         }
     }
 }

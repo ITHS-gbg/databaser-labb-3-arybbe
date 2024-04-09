@@ -23,7 +23,7 @@ public class QuizRepository
             database.GetCollection<Quiz>("Quizzes", new MongoCollectionSettings() { AssignIdOnInsert = true });
     }
 
-    public event Action UpdateQuizList;
+    
     public event Action UpdateQuestionList;
     public event Action UpdateQuestionListForQuiz;
 
@@ -37,30 +37,33 @@ public class QuizRepository
         };
 
         _quizzesCollection.InsertOne(newQuiz);
-        UpdateQuizList.Invoke();
     }
 
     public void AddQuestion(QuestionRecord questionRecord)
     {
+        if (!int.TryParse(questionRecord.CorrectOptionIndex, out var correctOptionIndex))
+        {
+            throw new FormatException("CorrectOptionIndex is not a valid number");
+        }
+
         var newQuestion = new Question()
         {
             Text = questionRecord.Text,
             Options = questionRecord.Options,
-            CorrectOptionIndex = int.Parse(questionRecord.CorrectOptionIndex)
+            CorrectOptionIndex = correctOptionIndex
         };
 
         _questionsCollection.InsertOne(newQuestion);
-        UpdateQuestionList.Invoke();
     }
 
-    public IEnumerable<QuizRecord> GetAllQuizzes()
+    public List<QuizRecord> GetAllQuizzes()
     {
         var filter = Builders<Quiz>.Filter.Empty;
         var allQuizzes = _quizzesCollection.Find(filter).ToList()
             .Select(q =>
                 new QuizRecord(q.Id.ToString(), q.Name, q.Description, new List<QuestionRecord>()));
 
-        return allQuizzes;
+        return allQuizzes.ToList();
     }
 
     public IEnumerable<QuestionRecord> GetAllQuestions()
@@ -86,7 +89,6 @@ public class QuizRepository
         var update = Builders<Quiz>.Update.Set("Questions", quiz.Questions);
         _quizzesCollection.UpdateOne(quizFilter, update);
 
-        UpdateQuestionListForQuiz.Invoke();
     }
 
     public void RemoveQuestionFromQuiz(string quizId, string questionId)
@@ -101,7 +103,6 @@ public class QuizRepository
 
         var update = Builders<Quiz>.Update.Set("Questions", quiz.Questions);
         _quizzesCollection.UpdateOne(quizFilter, update);
-        UpdateQuestionListForQuiz.Invoke();
     }
 
     public void DeleteQuiz(string quizId)
@@ -109,7 +110,6 @@ public class QuizRepository
         var filter = Builders<Quiz>.Filter.Eq("_id", ObjectId.Parse(quizId));
 
         _quizzesCollection.DeleteOne(filter);
-        UpdateQuizList.Invoke();
     }
 
     public void DeleteQuestion(string questionId)
@@ -117,7 +117,6 @@ public class QuizRepository
         var filter = Builders<Question>.Filter.Eq("_id", ObjectId.Parse(questionId));
 
         _questionsCollection.DeleteOne(filter);
-        UpdateQuestionList.Invoke();
     }
 
     public void DeleteQuestionFromQuizzes(string questionId)
@@ -125,7 +124,6 @@ public class QuizRepository
         var filter = Builders<Quiz>.Filter.ElemMatch(q => q.Questions, q => q.Id == ObjectId.Parse(questionId));
         var update = Builders<Quiz>.Update.PullFilter(q => q.Questions, q => q.Id == ObjectId.Parse(questionId));
         _quizzesCollection.UpdateMany(filter, update);
-        UpdateQuestionListForQuiz.Invoke();
     }
 
 
@@ -135,7 +133,6 @@ public class QuizRepository
         var update = Builders<Quiz>.Update.Set("Name", quizRecord.Name).Set("Description", quizRecord.Description);
 
         _quizzesCollection.UpdateOne(filter, update);
-        UpdateQuizList.Invoke();
     }
 
     public void UpdateQuestion(QuestionRecord questionRecord)
@@ -145,7 +142,6 @@ public class QuizRepository
             .Set("CorrectOptionIndex", int.Parse(questionRecord.CorrectOptionIndex));
 
         _questionsCollection.UpdateOne(filter, update);
-        UpdateQuestionList.Invoke();
     }
 
     public IEnumerable<QuestionRecord> GetQuestionsForQuiz(string quizId)
@@ -177,6 +173,10 @@ public class QuizRepository
     {
         var filter = Builders<Quiz>.Filter.Eq("Name", name);
         var quiz = _quizzesCollection.Find(filter).FirstOrDefault();
+        if (quiz is null)
+        {
+            return null;
+        }
 
         return new QuizRecord(quiz.Id.ToString(), quiz.Name, quiz.Description, new List<QuestionRecord>());
     }
@@ -185,6 +185,10 @@ public class QuizRepository
     {
         var filter = Builders<Question>.Filter.Eq("Text", text);
         var question = _questionsCollection.Find(filter).FirstOrDefault();
+        if (question is null)
+        {
+            return null;
+        }
 
         return new QuestionRecord(question.Id.ToString(), question.Text, question.Options, question.CorrectOptionIndex.ToString());
     }

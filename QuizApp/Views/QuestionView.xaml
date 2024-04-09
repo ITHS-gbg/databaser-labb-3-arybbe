@@ -127,21 +127,21 @@
                         Name="CorrectIndexBtnOne"
                         Grid.Column="1"
                         HorizontalAlignment="Center"
-                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}">
+                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0, Mode=TwoWay}">
                         One
                     </RadioButton>
                     <RadioButton
                         Name="CorrectIndexBtnTwo"
                         Grid.Column="2"
                         HorizontalAlignment="Center"
-                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}">
+                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1, Mode=TwoWay}">
                         Two
                     </RadioButton>
                     <RadioButton
                         Name="CorrectIndexBtnThree"
                         Grid.Column="3"
                         HorizontalAlignment="Center"
-                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}">
+                        IsChecked="{Binding CorrectOptionIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2, Mode=TwoWay}">
                         Three
                     </RadioButton>
                 </Grid>
@@ -174,7 +174,7 @@
                     Name="QuestionList"
                     Grid.Row="1"
                     ItemsSource="{Binding Questions}"
-                    SelectedItem="{Binding SelectedQuestion}">
+                    SelectedItem="{Binding SelectedQuestion, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Text}" />
