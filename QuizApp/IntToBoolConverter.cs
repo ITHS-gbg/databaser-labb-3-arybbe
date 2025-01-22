@@ -7,27 +7,19 @@ public class IntToBoolConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is int intValue && parameter is string paramString)
+        if (value is int intValue && parameter is string strParam && int.TryParse(strParam, out int paramValue))
         {
-            int paramValue;
-            if (int.TryParse(paramString, out paramValue))
-            {
-                return intValue == paramValue;
-            }
+            return intValue == paramValue && intValue >= 0;
         }
         return false;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is bool boolValue && boolValue)
+        if (value is bool boolValue && parameter is string strParam && int.TryParse(strParam, out int paramValue))
         {
-            if (int.TryParse(parameter as string, out int index))
-            {
-                return index;
-            }
+            return boolValue ? paramValue : -1;
         }
-        return Binding.DoNothing;
+        return -1;
     }
-
 }

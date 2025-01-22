@@ -8,8 +8,8 @@ namespace QuizApp.ViewModels;
 public class QuizViewModel : BaseViewModel
 {
     private QuizRepository _quizRepository;
-    private ObservableCollection<QuizRecord> _quizzes;
-    private ObservableCollection<QuestionRecord> _currentQuizQuestions;
+    private ObservableCollection<QuizRecord> _quizzes = [];
+    private ObservableCollection<QuestionRecord> _currentQuizQuestions = [];
     private QuizRecord _selectedQuiz;
     private QuestionRecord _selectedQuestion;
 
@@ -43,10 +43,11 @@ public class QuizViewModel : BaseViewModel
             _selectedQuiz = value;
             OnPropertyChanged();
             LoadQuestionsForQuiz();
+            
         }
     }
 
-    public QuestionRecord SelectedQuestion
+    public QuestionRecord SelectedQuestionOfQuiz
     {
         get => _selectedQuestion;
         set

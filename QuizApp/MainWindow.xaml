@@ -16,8 +16,8 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
 
-        <views:QuizView />
-        <views:QuestionView Grid.Column="1" />
-        
+        <views:QuizView DataContext="{Binding}" />
+        <views:QuestionView Grid.Column="1" DataContext="{Binding}" />
+
     </Grid>
 </Window>

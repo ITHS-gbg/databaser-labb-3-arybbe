@@ -24,36 +24,44 @@ namespace QuizApp.Views
     public partial class QuizView : UserControl
     {
         private readonly QuizRepository _quizRepository;
-        private readonly QuizViewModel _quizViewModel;
-        private readonly QuestionViewModel _questionViewModel;
 
         public QuizView()
         {
             InitializeComponent();
             _quizRepository = new QuizRepository();
-            _quizViewModel = new QuizViewModel();
-            _questionViewModel = new QuestionViewModel();
-            DataContext = _quizViewModel;
         }
 
-        
-
+        private void ClearSelectionBtn_OnClick(object sender, RoutedEventArgs e)
+        {
+            var mainViewModel = (MainViewModel)DataContext;
+            mainViewModel.SelectedQuiz = null;
+            mainViewModel.NewQuiz = new QuizRecord("", "", "", []);
+            QuizSelector.SelectedItem = null;
+        }
 
         private void RemoveQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            if (_quizViewModel.SelectedQuiz is null)
+            var mainViewModel = (MainViewModel)DataContext;
+            if (mainViewModel.SelectedQuiz is null)
             {
                 return;
             }
-            _quizRepository.DeleteQuiz(_quizViewModel.SelectedQuiz.Id);
-            _quizViewModel.SelectedQuiz = null;
-            _quizViewModel.ReloadQuizzes();
+
+            string quizId = mainViewModel.SelectedQuiz.Id;
+            mainViewModel.SelectedQuiz = null;
+            _quizRepository.DeleteQuiz(quizId);
+            mainViewModel.ReloadQuizzes();
         }
 
         private void RemoveQuestionFromQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            _quizRepository.RemoveQuestionFromQuiz(_quizViewModel.SelectedQuiz.Id, _quizViewModel.SelectedQuestion.Id);
-            _quizViewModel.ReloadQuestionsForQuiz();
+            var mainViewModel = (MainViewModel)DataContext;
+            if (mainViewModel.SelectedQuiz is null || mainViewModel.SelectedQuestionOfQuiz is null)
+            {
+                return;
+            }
+            _quizRepository.RemoveQuestionFromQuiz(mainViewModel.SelectedQuiz.Id, mainViewModel.SelectedQuestionOfQuiz.Id);
+            mainViewModel.ReloadQuestionsForQuiz();
         }
     }
 }

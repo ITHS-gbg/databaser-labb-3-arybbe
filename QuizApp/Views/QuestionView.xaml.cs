@@ -24,101 +24,169 @@ namespace QuizApp.Views
     public partial class QuestionView : UserControl
     {
         private readonly QuizRepository _quizRepository;
-        private readonly QuestionViewModel _questionViewModel;
-        private readonly QuizViewModel _quizViewModel;
-
 
         public QuestionView()
         {
             InitializeComponent();
             _quizRepository = new QuizRepository();
-            _questionViewModel = new QuestionViewModel();
-            _quizViewModel = new QuizViewModel();
-            DataContext = _questionViewModel;
-        }
-
-        private void ReloadQuestionsForQuiz()
-        {
-            _quizViewModel.CurrentQuizQuestions.Clear();
-            var questions = _quizRepository.GetQuestionsForQuiz(_quizViewModel.SelectedQuiz.Id);
-            foreach (var question in questions)
-            {
-                _quizViewModel.CurrentQuizQuestions.Add(question);
-            }
-        }
-
-        private void ReloadQuizzes()
-        {
-            _quizViewModel.Quizzes.Clear();
-            var quizzes = _quizRepository.GetAllQuizzes();
-            foreach (var quiz in quizzes)
-            {
-                _quizViewModel.Quizzes.Add(quiz);
-            }
-        }
-
-        private void ReloadQuestions()
-        {
-            _questionViewModel.Questions.Clear();
-            var questions = _quizRepository.GetAllQuestions();
-            foreach (var question in questions)
-            {
-                _questionViewModel.Questions.Add(question);
-            }
         }
 
         private void AddQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            if (_questionViewModel.NewQuiz is null)
+            var mainViewModel = (MainViewModel)DataContext;
+            if (mainViewModel.NewQuiz is null || string.IsNullOrWhiteSpace(mainViewModel.NewQuiz.Name))
             {
                 MessageBox.Show("Please enter a quiz name");
                 return;
             }
 
-            if (_quizRepository.GetQuizByName(_questionViewModel.NewQuiz.Name) is not null)
+            try
             {
-                MessageBox.Show("Quiz with that Name already exists");
-                return;
+                if (mainViewModel.SelectedQuiz is not null)
+                {
+                    if (_quizRepository.QuizNameExists(mainViewModel.NewQuiz.Name, mainViewModel.SelectedQuiz.Id))
+                    {
+                        MessageBox.Show("A quiz with this name already exists. Please choose a different name.");
+                        return;
+                    }
+
+                    var updatedQuiz = new QuizRecord(
+                        mainViewModel.SelectedQuiz.Id,
+                        mainViewModel.NewQuiz.Name,
+                        mainViewModel.NewQuiz.Description,
+                        mainViewModel.NewQuiz.Questions
+                    );
+
+                    _quizRepository.UpdateQuiz(updatedQuiz);
+                }
+                else
+                {
+                    if (_quizRepository.QuizNameExists(mainViewModel.NewQuiz.Name))
+                    {
+                        MessageBox.Show("A quiz with this name already exists. Please choose a different name.");
+                        return;
+                    }
+
+                    _quizRepository.AddQuiz(mainViewModel.NewQuiz);
+                }
+
+                mainViewModel.ReloadQuizzes();
+                mainViewModel.NewQuiz = new QuizRecord("", "", "", []);
+                mainViewModel.SelectedQuiz = null;
             }
-            _quizRepository.AddQuiz(_questionViewModel.NewQuiz);
-            _quizViewModel.ReloadQuizzes();
-            _questionViewModel.NewQuiz = new QuizRecord("", "", "", []);
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
         }
 
         private void RemoveQuestionBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            _quizRepository.DeleteQuestion(_questionViewModel.SelectedQuestion.Id);
-            _questionViewModel.ReloadQuestions();
+            var mainViewModel = (MainViewModel)DataContext;
+            if (mainViewModel.SelectedQuestion == null)
+            {
+                return;
+            }
+
+            _quizRepository.DeleteQuestion(mainViewModel.SelectedQuestion.Id);
+            mainViewModel.ReloadQuestions();
+
+            if (mainViewModel.SelectedQuiz != null)
+            {
+                mainViewModel.ReloadQuestionsForQuiz();
+            }
         }
 
         private void AddQuestionToQuizBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            _quizRepository.AddQuestionToQuiz(_quizViewModel.SelectedQuiz.Id, _questionViewModel.SelectedQuestion.Id);
-            ReloadQuestionsForQuiz();
+            var mainViewModel = (MainViewModel)DataContext;
+            if (mainViewModel.SelectedQuiz == null)
+            {
+                MessageBox.Show("Please select a quiz before adding a question.");
+                return;
+            }
+            if (mainViewModel.SelectedQuestion == null)
+            {
+                MessageBox.Show("Please select a question to add.");
+                return;
+            }
+            _quizRepository.AddQuestionToQuiz(mainViewModel.SelectedQuiz.Id, mainViewModel.SelectedQuestion.Id);
+            mainViewModel.ReloadQuestionsForQuiz();
         }
 
         private void AddQuestionBtn_OnClick(object sender, RoutedEventArgs e)
         {
-            if (_questionViewModel.NewQuestion is null)
+            var mainViewModel = (MainViewModel)DataContext;
+            if (mainViewModel.NewQuestion is null)
             {
-                MessageBox.Show("Please enter a question");
+                MessageBox.Show("Please enter a question text");
                 return;
             }
 
-            if (_quizRepository.GetQuestionByText(_questionViewModel.NewQuestion.Text) is not null)
+            if (string.IsNullOrWhiteSpace(mainViewModel.NewQuestion.Text))
             {
-                MessageBox.Show("Question with that Text already exists");
+                MessageBox.Show("Please enter a question text");
                 return;
             }
 
-            var updatedQuestion = _questionViewModel.NewQuestion with
+            try
             {
-                CorrectOptionIndex = _questionViewModel.CorrectOptionIndex.ToString()
-            };
-            _quizRepository.AddQuestion(updatedQuestion);
+                if (mainViewModel.SelectedQuestion is not null)
+                {
+                    if (_quizRepository.QuestionTextExists(mainViewModel.NewQuestion.Text, mainViewModel.SelectedQuestion.Id))
+                    {
+                        MessageBox.Show("A question with this text already exists. Please use different text.");
+                        return;
+                    }
 
-            _questionViewModel.ReloadQuestions();
-            _questionViewModel.NewQuestion = new QuestionRecord("", "", [], "");
+                    var updatedQuestion = new QuestionRecord(
+                        mainViewModel.SelectedQuestion.Id,
+                        mainViewModel.NewQuestion.Text,
+                        mainViewModel.NewQuestion.Options,
+                        mainViewModel.CorrectOptionIndex.ToString()
+                    );
+
+                    _quizRepository.UpdateQuestion(updatedQuestion);
+                    mainViewModel.ReloadQuestions();
+                }
+                else
+                {
+                    if (_quizRepository.QuestionTextExists(mainViewModel.NewQuestion.Text))
+                    {
+                        MessageBox.Show("A question with this text already exists. Please use different text.");
+                        return;
+                    }
+
+                    mainViewModel.NewQuestion.CorrectOption = mainViewModel.CorrectOptionIndex.ToString();
+                    _quizRepository.AddQuestion(mainViewModel.NewQuestion);
+                    mainViewModel.ReloadQuestions();
+                }
+
+                mainViewModel.NewQuestion = new QuestionRecord("", "", [], "0");
+                mainViewModel.SelectedQuestion = null;
+                mainViewModel.CorrectOptionIndex = -1; 
+
+                mainViewModel.OnPropertyChanged(nameof(mainViewModel.OptionOne));
+                mainViewModel.OnPropertyChanged(nameof(mainViewModel.OptionTwo));
+                mainViewModel.OnPropertyChanged(nameof(mainViewModel.OptionThree));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+        }
+
+        private void NewQuestionBtn_OnClick(object sender, RoutedEventArgs e)
+        {
+            var mainViewModel = (MainViewModel)DataContext;
+
+            mainViewModel.NewQuestion = new QuestionRecord("", "", [], "0");
+            mainViewModel.SelectedQuestion = null;
+            mainViewModel.CorrectOptionIndex = -1; 
+
+            mainViewModel.OnPropertyChanged(nameof(mainViewModel.OptionOne));
+            mainViewModel.OnPropertyChanged(nameof(mainViewModel.OptionTwo));
+            mainViewModel.OnPropertyChanged(nameof(mainViewModel.OptionThree));
         }
     }
 }
